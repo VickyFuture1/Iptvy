@@ -246,8 +246,7 @@
 <script>
      (adsbygoogle = window.adsbygoogle || []).push({});
 </script>
-  
-    function openArticle(title) {
+  function openArticle(title) {
       const a = newsItems.find(n => n.title === title);
       if (!reactions[title]) reactions[title] = { support: 0, wow: 0, see: 0 };
       const storageKey = `reacted-${title}`;
