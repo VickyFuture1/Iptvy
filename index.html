@@ -183,7 +183,8 @@
       desc.innerHTML = `<h3>${post.title}</h3><p>${post.summary}</p>`;
 
       const readMore = document.createElement('a');
-      readMore.href = `#${slugify(post.title)}`;
+      readMore.href = `article.html?slug=${slugify(post.title)}`;
+      readMore.target = "_blank"; // optional: open in new tab
       readMore.className = 'read-more';
       readMore.textContent = 'Read More';
 
