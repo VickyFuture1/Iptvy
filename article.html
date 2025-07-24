@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trendvvy | Article</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -83,76 +84,72 @@
   </div>
 
   <script>
-    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyb5Dj0JCF45CFnjH1rAt3rOXxMDBnS63f_WwSODq4qIRBLDMBK5GkTWbHB8_OdHtjLnCNsAtnqEy-/pub?output=csv';
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('slug');
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyb5Dj0JCF45CFnjH1rAt3rOXxMDBnS63f_WwSODq4qIRBLDMBK5GkTWbHB8_OdHtjLnCNsAtnqEy-/pub?output=csv';
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('slug');
 
-    function slugify(text) {
-      return text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  function slugify(text) {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  }
+
+  function showArticle(article) {
+    const container = document.getElementById('articleContainer');
+    container.innerHTML = '';
+
+    const title = document.createElement('h2');
+    title.textContent = article.title;
+
+    if (article.image) {
+      const image = document.createElement('img');
+      image.src = article.image;
+      container.appendChild(image);
     }
 
-    function showArticle(article) {
-      const container = document.getElementById('articleContainer');
-      container.innerHTML = '';
+    container.appendChild(title);
 
-      const title = document.createElement('h2');
-      title.textContent = article.title;
-
-      if (article.image) {
-        const image = document.createElement('img');
-        image.src = article.image;
-        container.appendChild(image);
-      }
-
-      container.appendChild(title);
-
-      if (article.content_paragraphs) {
-        article.content_paragraphs.split('\n').forEach(p => {
-          const para = document.createElement('p');
-          para.className = 'paragraph';
-          para.textContent = p;
-          container.appendChild(para);
-        });
-      } else {
+    if (article.content_paragraphs) {
+      article.content_paragraphs.split('\n').forEach(p => {
         const para = document.createElement('p');
-        para.textContent = 'No detailed content available for this article.';
+        para.className = 'paragraph';
+        para.textContent = p;
         container.appendChild(para);
-      }
-
-      const shareBox = document.createElement('div');
-      shareBox.className = 'share-box';
-      shareBox.innerHTML = `<strong>Share this article:</strong><br><input value="${location.href}" readonly onclick="this.select()" />`;
-
-      container.appendChild(shareBox);
-
-      const back = document.createElement('a');
-      back.href = 'index.html';
-      back.className = 'back-link';
-      back.textContent = '← Back to home';
-      container.appendChild(back);
+      });
+    } else {
+      const para = document.createElement('p');
+      para.textContent = 'No detailed content available for this article.';
+      container.appendChild(para);
     }
 
-    fetch(SHEET_URL)
-      .then(res => res.text())
-      .then(csv => {
-        const lines = csv.split('\n');
-        const headers = lines[0].split(',');
-        for (let i = 1; i < lines.length; i++) {
-          const row = lines[i].split(',');
-          const article = {};
-          headers.forEach((h, j) => article[h.trim()] = row[j]);
+    const shareBox = document.createElement('div');
+    shareBox.className = 'share-box';
+    shareBox.innerHTML = `<strong>Share this article:</strong><br><input value="${location.href}" readonly onclick="this.select()" />`;
+    container.appendChild(shareBox);
 
-          if (slugify(article.title) === slug) {
-            showArticle(article);
-            return;
-          }
-        }
+    const back = document.createElement('a');
+    back.href = 'index.html';
+    back.className = 'back-link';
+    back.textContent = '← Back to home';
+    container.appendChild(back);
+  }
+
+  fetch(SHEET_URL)
+    .then(res => res.text())
+    .then(csv => {
+      const parsed = Papa.parse(csv, { header: true });
+      const articles = parsed.data;
+      const found = articles.find(a => slugify(a.title) === slug);
+
+      if (found) {
+        showArticle(found);
+      } else {
         document.getElementById('articleContainer').innerHTML = '<p>Article not found.</p>';
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('articleContainer').innerHTML = '<p>Error loading content.</p>';
-      });
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('articleContainer').innerHTML = '<p>Error loading content.</p>';
+    });
   </script>
+  
 </body>
 </html>
