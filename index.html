@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trendvvy</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M3 17L9 11L13 15L21 7' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%232f88b3' d='M3 17L9 11L13 15L21 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>">
   <style>
     :root {
       --bg-color: #ffffff;
@@ -88,6 +88,14 @@
       text-decoration: none;
       border-radius: 5px;
     }
+    .full-article {
+      border: 1px solid #ccc;
+      background: #f2f2f2;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 700px;
+      margin: 20px auto;
+    }
     footer {
       margin-top: 30px;
       padding: 15px;
@@ -121,27 +129,6 @@
       70% { box-shadow: 0 0 0 12px rgba(47,136,179, 0); }
       100% { box-shadow: 0 0 0 0 rgba(47,136,179, 0); }
     }
-    .popup {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      border: 1px solid #ccc;
-      padding: 20px;
-      border-radius: 8px;
-      display: none;
-      z-index: 1000;
-    }
-    .popup input {
-      width: 100%;
-      padding: 5px;
-      margin-top: 10px;
-    }
-    .popup button {
-      margin-top: 10px;
-      padding: 5px 10px;
-    }
   </style>
 </head>
 <body>
@@ -163,12 +150,6 @@
   <a href="#" class="next-button" onclick="loadNext()">Next Page</a>
 
   <button id="modeToggle">Dark Mode</button>
-
-  <div id="sharePopup" class="popup">
-    <p>Copy this article link:</p>
-    <input type="text" id="shareInput" readonly>
-    <button onclick="copyLink()">Copy</button>
-  </div>
 
   <footer>
     <p>
@@ -207,29 +188,18 @@
       readMore.textContent = 'Read More';
 
       const share = document.createElement('a');
-      share.href = `#`;
+      share.href = '#';
       share.className = 'share-link';
       share.textContent = 'Share';
-      share.onclick = () => showSharePopup(`${location.origin}${location.pathname}#${slugify(post.title)}`);
+      share.onclick = () => {
+        const popup = window.prompt("Copy this link:", `${location.origin}${location.pathname}#${slugify(post.title)}`);
+        return false;
+      };
 
       desc.appendChild(readMore);
       desc.appendChild(share);
       card.appendChild(desc);
       return card;
-    }
-
-    function showSharePopup(link) {
-      const popup = document.getElementById('sharePopup');
-      document.getElementById('shareInput').value = link;
-      popup.style.display = 'block';
-    }
-
-    function copyLink() {
-      const input = document.getElementById('shareInput');
-      input.select();
-      document.execCommand('copy');
-      alert('Link copied to clipboard!');
-      document.getElementById('sharePopup').style.display = 'none';
     }
 
     function renderPage(page) {
@@ -249,10 +219,28 @@
       renderPage(currentPage);
     }
 
+    function showFull(slug) {
+      const found = allPosts.find(p => slugify(p.title) === slug);
+      const container = document.getElementById('posts');
+      container.innerHTML = '';
+      if (found) {
+        const full = document.createElement('div');
+        full.className = 'full-article';
+        full.innerHTML = `
+          <h2>${found.title}</h2>
+          ${found.image ? `<img src="${found.image}" style="max-width:100%;border-radius:8px">` : ''}
+          <p>${found.summary || ''}</p>
+          <p>${found.content_paragraphs || 'No detailed content available for this article.'}</p>
+        `;
+        container.appendChild(full);
+      } else {
+        container.innerHTML = '<p>Sorry, this content is not available.</p>';
+      }
+    }
+
     fetch(SHEET_URL)
       .then(res => res.text())
       .then(csv => {
-        if (!csv) return;
         const lines = csv.split('\n');
         const headers = lines[0].split(',');
         for (let i = 1; i < lines.length; i++) {
@@ -266,21 +254,16 @@
 
         const slug = location.hash.slice(1);
         if (slug) {
-          const found = allPosts.find(p => slugify(p.title) === slug);
-          document.getElementById('posts').innerHTML = '';
-          if (found) {
-            document.getElementById('posts').appendChild(createCard(found));
-          } else {
-            document.getElementById('posts').innerHTML = '<p>Sorry, content is not available for this article.</p>';
-          }
+          showFull(slug);
         } else {
           renderPage(0);
         }
-      })
-      .catch(err => {
-        console.error('Failed to fetch or parse CSV:', err);
-        document.getElementById('posts').innerHTML = '<p>Error loading content. Please try again later.</p>';
       });
+
+    window.addEventListener('hashchange', () => {
+      const slug = location.hash.slice(1);
+      if (slug) showFull(slug);
+    });
 
     const toggle = document.getElementById('modeToggle');
     const modes = [
