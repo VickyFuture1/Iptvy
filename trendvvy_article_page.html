@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trendvvy | Article</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #ffffff;
+      color: #000;
+    }
+    header {
+      background-color: #2f88b3;
+      color: white;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header .logo {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    header svg {
+      height: 32px;
+      width: 32px;
+      margin-right: 10px;
+    }
+    .content {
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    img {
+      max-width: 100%;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    h2 {
+      color: #2f88b3;
+    }
+    .share-box {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f0f0f0;
+    }
+    .share-box input {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      background: #fff;
+      border-radius: 4px;
+    }
+    .paragraph {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 25px;
+      color: #2f88b3;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header onclick="window.location.href='index.html'">
+    <div class="logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 17L9 11L13 15L21 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>Trendvvy</h1>
+    </div>
+  </header>
+
+  <div class="content" id="articleContainer">
+    <p>Loading article...</p>
+  </div>
+
+  <script>
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyb5Dj0JCF45CFnjH1rAt3rOXxMDBnS63f_WwSODq4qIRBLDMBK5GkTWbHB8_OdHtjLnCNsAtnqEy-/pub?output=csv';
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('slug');
+
+    function slugify(text) {
+      return text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    }
+
+    function showArticle(article) {
+      const container = document.getElementById('articleContainer');
+      container.innerHTML = '';
+
+      const title = document.createElement('h2');
+      title.textContent = article.title;
+
+      if (article.image) {
+        const image = document.createElement('img');
+        image.src = article.image;
+        container.appendChild(image);
+      }
+
+      container.appendChild(title);
+
+      if (article.content_paragraphs) {
+        article.content_paragraphs.split('\n').forEach(p => {
+          const para = document.createElement('p');
+          para.className = 'paragraph';
+          para.textContent = p;
+          container.appendChild(para);
+        });
+      } else {
+        const para = document.createElement('p');
+        para.textContent = 'No detailed content available for this article.';
+        container.appendChild(para);
+      }
+
+      const shareBox = document.createElement('div');
+      shareBox.className = 'share-box';
+      shareBox.innerHTML = `<strong>Share this article:</strong><br><input value="${location.href}" readonly onclick="this.select()" />`;
+
+      container.appendChild(shareBox);
+
+      const back = document.createElement('a');
+      back.href = 'index.html';
+      back.className = 'back-link';
+      back.textContent = '← Back to home';
+      container.appendChild(back);
+    }
+
+    fetch(SHEET_URL)
+      .then(res => res.text())
+      .then(csv => {
+        const lines = csv.split('\n');
+        const headers = lines[0].split(',');
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(',');
+          const article = {};
+          headers.forEach((h, j) => article[h.trim()] = row[j]);
+
+          if (slugify(article.title) === slug) {
+            showArticle(article);
+            return;
+          }
+        }
+        document.getElementById('articleContainer').innerHTML = '<p>Article not found.</p>';
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById('articleContainer').innerHTML = '<p>Error loading content.</p>';
+      });
+  </script>
+</body>
+</html>
