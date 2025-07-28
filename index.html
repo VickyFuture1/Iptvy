@@ -172,16 +172,6 @@
       const card = document.createElement('div');
       card.className = 'card';
 
-      if (article.image && article.image.startsWith('http')) {
-  const img = document.createElement('img');
-  img.src = article.image;
-  img.alt = article.title;
-  img.style.width = '100%';
-  img.style.borderRadius = '8px';
-  img.style.marginBottom = '10px';
-  articleCard.appendChild(img);
-    }
-
       if (post.image) {
         const img = document.createElement('img');
         img.src = post.image;
